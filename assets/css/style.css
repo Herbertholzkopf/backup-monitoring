@@ -1,0 +1,252 @@
+/* Basis-Styles */
+body {
+    font-family: Arial, sans-serif;
+    margin: 20px;
+    background: #f5f5f5;
+}
+
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+}
+
+.settings-button {
+    padding: 8px 15px;
+    background: #2196F3;
+    color: white;
+    text-decoration: none;
+    border-radius: 4px;
+}
+
+.customer-card {
+    background: white;
+    margin: 15px 0;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.customer-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.customer-name {
+    margin: 0;
+    color: #2c3e50;
+}
+
+.customer-number {
+    margin-left: 10px;
+    color: #7f8c8d;
+    font-size: 0.9em;
+}
+
+.backup-job {
+    background: #f8f9fa;
+    margin: 10px 0;
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.job-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.backup-type {
+    background: #e0e0e0;
+    padding: 3px 8px;
+    border-radius: 3px;
+    font-size: 0.8em;
+    margin-right: 10px;
+}
+
+/* Status Grid */
+.status-grid {
+    display: grid;
+    grid-template-columns: repeat(16, 30px);
+    gap: 3px;
+    margin-top: 10px;
+}
+
+/* Tooltip System */
+.tooltip {
+    position: relative;
+    display: inline-block;
+}
+
+.tooltip-content {
+    visibility: hidden;
+    width: 300px;
+    background-color: white;
+    color: black;
+    text-align: left;
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid #ddd;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    
+    /* Positionierung */
+    position: absolute;
+    bottom: 120%;
+    left: 50%;
+    transform: translateX(-50%);
+    
+    /* Animation */
+    opacity: 0;
+    transition: opacity 0.3s, visibility 0.3s;
+    
+    /* Wichtig für Überlappung */
+    z-index: 1000;
+}
+
+/* Pfeil unter dem Tooltip */
+.tooltip-content::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: white transparent transparent transparent;
+}
+
+/* Tooltip anzeigen bei Hover */
+.tooltip:hover .tooltip-content {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Status Box */
+.status-box {
+    width: 30px;
+    height: 30px;
+    border-radius: 4px;
+    position: relative;
+    cursor: pointer;
+    transition: box-shadow 0.2s ease-in-out;
+}
+
+/* Hover-Effekt für Status-Box */
+.tooltip:hover .status-box {
+    box-shadow: 0 0 0 2px #2196F3;
+}
+
+/* Status-Farben */
+.status-success { background: #4CAF50; }
+.status-warning { background: #FFC107; }
+.status-error { background: #F44336; }
+.status-unknown { background: #9E9E9E; }
+
+/* Multiple Status Indicator */
+.multi-status {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: white;
+    border-radius: 50%;
+    width: 12px;
+    height: 12px;
+    font-size: 10px;
+    line-height: 12px;
+    text-align: center;
+    border: 1px solid #666;
+}
+
+/* Notizen Sektion */
+.notes-section {
+    margin-top: 10px;
+    border-top: 1px solid #eee;
+    padding-top: 10px;
+}
+
+.notes-textarea {
+    width: 100%;
+    min-height: 60px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 12px;
+    resize: vertical;
+    margin-top: 5px;
+}
+
+.notes-save-btn {
+    background: #4CAF50;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+.save-indicator {
+    font-size: 12px;
+    color: #4CAF50;
+    margin-left: 10px;
+    opacity: 0;
+    transition: opacity 0.3s;
+}
+
+.save-indicator.show {
+    opacity: 1;
+}
+
+/* Status Entry */
+.status-entry {
+    margin: 8px 0;
+    padding: 8px;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.status-entry + .status-entry {
+    margin-top: 8px;
+}
+
+/* Download Button */
+.download-btn {
+    background: #2196F3;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 12px;
+    margin-top: 5px;
+}
+
+/* Tooltip im Edit-Modus */
+.tooltip.editing .tooltip-content {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Responsive Anpassungen */
+@media (max-width: 768px) {
+    .status-grid {
+        grid-template-columns: repeat(8, 30px);
+    }
+    
+    .tooltip-content {
+        width: 250px;
+    }
+}
+
+@media (max-width: 480px) {
+    .status-grid {
+        grid-template-columns: repeat(4, 30px);
+    }
+    
+    .tooltip-content {
+        width: 200px;
+    }
+}
