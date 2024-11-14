@@ -44,6 +44,7 @@ while ($row = $result->fetch_assoc()) {
 <html>
 <head>
     <title>Backup Monitor</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         /* ... [Vorherige Styles bleiben] ... */
         

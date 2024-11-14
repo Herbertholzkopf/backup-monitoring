@@ -110,6 +110,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <html>
 <head>
     <title>Backup-Monitor Installation</title>
+    <link rel="stylesheet" href="/assets/css/style.css">
     <style>
         body {
             font-family: Arial, sans-serif;
