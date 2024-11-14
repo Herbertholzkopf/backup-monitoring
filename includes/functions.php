@@ -90,7 +90,7 @@ function generateCustomerNumber($db) {
     do {
         $number = 'KD-' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
         $result = $db->query("SELECT id FROM customers WHERE customer_number = '" . 
-                            $db->escape($number) . "'");
+                            mysqli_real_escape_string($db, $number) . "'");
     } while ($result->num_rows > 0);
     
     return $number;
