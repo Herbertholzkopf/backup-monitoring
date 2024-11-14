@@ -1,7 +1,5 @@
 <?php
-// includes/functions.php
-
-// Prüft ob die Installation durchgeführt wurde
+// Installation prüfen
 function checkInstallation() {
     if (!file_exists(__DIR__ . '/../config/config.php')) {
         header('Location: /install/');
@@ -9,17 +7,16 @@ function checkInstallation() {
     }
 }
 
-// Formatiert ein Datum
+// Datums- und Zeitformatierung
 function formatDate($date) {
     return date('d.m.Y', strtotime($date));
 }
 
-// Formatiert eine Uhrzeit
 function formatTime($time) {
     return date('H:i:s', strtotime($time));
 }
 
-// Holt die System-Konfiguration
+// Systemkonfiguration
 function getSystemConfig($db, $key = null) {
     if ($key) {
         $stmt = $db->prepare("SELECT config_value FROM system_config WHERE config_key = ?");
@@ -38,75 +35,113 @@ function getSystemConfig($db, $key = null) {
     return $config;
 }
 
-// Speichert einen Konfigurationswert
 function saveSystemConfig($db, $key, $value) {
-    $stmt = $db->prepare("
-        INSERT INTO system_config (config_key, config_value) 
-        VALUES (?, ?) 
-        ON DUPLICATE KEY UPDATE config_value = ?
-    ");
-    $stmt->bind_param('sss', $key, $value, $value);
-    return $stmt->execute();
+    try {
+        $stmt = $db->prepare("
+            INSERT INTO system_config (config_key, config_value) 
+            VALUES (?, ?) 
+            ON DUPLICATE KEY UPDATE config_value = ?
+        ");
+        $stmt->bind_param('sss', $key, $value, $value);
+        return $stmt->execute();
+    } catch (Exception $e) {
+        logError("Fehler beim Speichern der Konfiguration: " . $e->getMessage());
+        return false;
+    }
 }
 
-// Überprüft den Backup-Status basierend auf Suchbegriffen
+// Backup-Status
 function determineBackupStatus($db, $content) {
-    $content = strtolower($content);
-    $result = $db->query("SELECT * FROM backup_status ORDER BY priority DESC");
-    
-    while ($status = $result->fetch_assoc()) {
-        $searchStrings = explode(',', $status['search_strings']);
-        foreach ($searchStrings as $string) {
-            $string = trim(strtolower($string));
-            if ($string && strpos($content, $string) !== false) {
-                return $status['name'];
+    try {
+        $content = strtolower($content);
+        $result = $db->query("SELECT * FROM backup_status ORDER BY priority DESC");
+        
+        while ($status = $result->fetch_assoc()) {
+            $searchStrings = explode(',', $status['search_strings']);
+            foreach ($searchStrings as $string) {
+                $string = trim(strtolower($string));
+                if ($string && strpos($content, $string) !== false) {
+                    return $status['name'];
+                }
             }
         }
+        
+        $result = $db->query("SELECT name FROM backup_status ORDER BY priority ASC LIMIT 1");
+        $defaultStatus = $result->fetch_assoc();
+        return $defaultStatus['name'];
+    } catch (Exception $e) {
+        logError("Fehler bei der Status-Bestimmung: " . $e->getMessage());
+        return 'unknown';
     }
-    
-    // Standard-Status zurückgeben (niedrigste Priorität)
-    $result = $db->query("SELECT name FROM backup_status ORDER BY priority ASC LIMIT 1");
-    $defaultStatus = $result->fetch_assoc();
-    return $defaultStatus['name'];
 }
 
-// Validiert eine E-Mail-Adresse
+// Validierung
 function isValidEmail($email) {
     return filter_var($email, FILTER_VALIDATE_EMAIL) !== false;
 }
 
-// Generiert eine eindeutige Kundennummer
+function isValidEmailFile($content) {
+    return strpos($content, 'From:') !== false && 
+           strpos($content, 'Date:') !== false;
+}
+
+// Kundennummer-Generator
 function generateCustomerNumber($db) {
     do {
         $number = 'KD-' . str_pad(mt_rand(1, 9999), 4, '0', STR_PAD_LEFT);
-        $result = $db->query("SELECT id FROM customers WHERE customer_number = '$number'");
+        $result = $db->query("SELECT id FROM customers WHERE customer_number = '" . 
+                            $db->escape($number) . "'");
     } while ($result->num_rows > 0);
     
     return $number;
 }
 
-// Bereinigt alte Backup-Ergebnisse
+// Datenpflege
 function cleanupOldResults($db, $daysToKeep = 30) {
-    $db->query("
-        DELETE FROM backup_results 
-        WHERE date < DATE_SUB(CURRENT_DATE, INTERVAL $daysToKeep DAY)
-    ");
+    try {
+        $db->query("
+            DELETE FROM backup_results 
+            WHERE date < DATE_SUB(CURRENT_DATE, INTERVAL $daysToKeep DAY)
+        ");
+        logError("Alte Ergebnisse bereinigt (älter als $daysToKeep Tage)");
+        return true;
+    } catch (Exception $e) {
+        logError("Fehler bei der Bereinigung: " . $e->getMessage());
+        return false;
+    }
 }
 
-// Prüft ob eine Datei eine gültige E-Mail ist
-function isValidEmailFile($content) {
-    return strpos($content, 'From:') !== false && strpos($content, 'Date:') !== false;
-}
-
-// Loggt Fehler
-function logError($message) {
-    $logFile = __DIR__ . '/../logs/error.log';
+// Logging
+function logError($message, $type = 'error') {
+    $logFile = __DIR__ . "/../logs/{$type}.log";
     $timestamp = date('Y-m-d H:i:s');
     $logMessage = "[$timestamp] $message\n";
     
-    if (!is_dir(dirname($logFile))) {
-        mkdir(dirname($logFile), 0755, true);
+    try {
+        if (!is_dir(dirname($logFile))) {
+            mkdir(dirname($logFile), 0755, true);
+        }
+        file_put_contents($logFile, $logMessage, FILE_APPEND);
+    } catch (Exception $e) {
+        error_log("Logging fehlgeschlagen: " . $e->getMessage());
     }
-    
-    file_put_contents($logFile, $logMessage, FILE_APPEND);
+}
+
+// Sicherheit
+function secureString($string) {
+    return htmlspecialchars($string, ENT_QUOTES, 'UTF-8');
+}
+
+function getClientIP() {
+    return $_SERVER['HTTP_X_FORWARDED_FOR'] ?? $_SERVER['REMOTE_ADDR'];
+}
+
+// Debug-Hilfe
+function debug($var, $die = false) {
+    if (getSystemConfig(Database::getInstance()->getConnection(), 'debug_mode')) {
+        echo '<pre>';
+        var_dump($var);
+        echo '</pre>';
+        if ($die) die();
+    }
 }
