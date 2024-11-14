@@ -1,51 +1,49 @@
 <h2>Mail-Einstellungen</h2>
-
 <div class="section">
     <form method="post">
         <input type="hidden" name="action" value="save_mail_config">
         
         <div class="form-group">
-            <label>POP3 Server:</label>
+            <label>IMAP Server:</label>
             <input type="text" 
-                   name="mail_server" 
-                   value="<?= htmlspecialchars($config['mail_server']) ?>"
-                   placeholder="pop.example.com" required>
+                   name="mail_host" 
+                   value="<?= htmlspecialchars($config['mail_host']) ?>" 
+                   placeholder="imap.example.com" required>
         </div>
-        
+
         <div class="form-group">
-            <label>Port:</label>
+            <label>IMAP Port:</label>
             <input type="number" 
                    name="mail_port" 
-                   value="<?= htmlspecialchars($config['mail_port']) ?>"
-                   placeholder="995" required>
+                   value="<?= htmlspecialchars($config['mail_port']) ?>" 
+                   placeholder="993" required>
         </div>
-        
+
         <div class="form-group">
-            <label>Benutzername:</label>
+            <label>IMAP Benutzername:</label>
             <input type="text" 
-                   name="mail_user" 
-                   value="<?= htmlspecialchars($config['mail_user']) ?>"
+                   name="mail_username" 
+                   value="<?= htmlspecialchars($config['mail_username']) ?>" 
                    required>
         </div>
-        
+
         <div class="form-group">
-            <label>Passwort:</label>
+            <label>IMAP Passwort:</label>
             <input type="password" 
                    name="mail_password" 
-                   value="<?= htmlspecialchars($config['mail_password']) ?>"
+                   value="<?= htmlspecialchars($config['mail_password']) ?>" 
                    required>
         </div>
-        
+
         <div class="form-group">
-            <label>
-                <input type="checkbox" 
-                       name="mail_ssl" 
-                       value="1" 
-                       <?= $config['mail_ssl'] ? 'checked' : '' ?>>
-                SSL-Verschlüsselung verwenden
-            </label>
+            <label for="mail_encryption">Verschlüsselungstyp</label>
+            <select id="mail_encryption" name="mail_encryption">
+                <option value="none" <?= $config['mail_encryption'] === 'none' ? 'selected' : '' ?>>Keine</option>
+                <option value="ssl" <?= $config['mail_encryption'] === 'ssl' ? 'selected' : '' ?>>SSL</option>
+                <option value="tls" <?= $config['mail_encryption'] === 'tls' ? 'selected' : '' ?>>TLS</option>
+            </select>
         </div>
-        
+
         <div class="form-group">
             <label>
                 <input type="checkbox" 
@@ -55,7 +53,7 @@
                 Verarbeitete E-Mails löschen
             </label>
         </div>
-        
+
         <button type="submit" class="button">Einstellungen speichern</button>
     </form>
 </div>
@@ -64,9 +62,9 @@
     <h3>CRON-Job Einrichtung</h3>
     <div class="code-block">
         <p>Fügen Sie folgenden Eintrag in Ihre Crontab ein (crontab -e):</p>
-        <pre>*/5 * * * * php <?= __DIR__ ?>/../../process_mails.php</pre>
+        <pre>*/5 * * * * php <?= dirname(__DIR__) ?>/../../process_mails.php</pre>
     </div>
-    
+
     <div class="test-connection">
         <h3>Verbindungstest</h3>
         <button onclick="testMailConnection()" class="button">Verbindung testen</button>
