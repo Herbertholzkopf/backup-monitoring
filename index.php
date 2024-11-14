@@ -1,9 +1,12 @@
 <?php
-$db = new mysqli('localhost', 'your_username', 'your_password', 'backup_monitor');
+require_once 'includes/Database.php';
+require_once 'includes/functions.php';
 
-if ($db->connect_error) {
-    die("Connection failed: " . $db->connect_error);
-}
+// Prüfe Installation
+checkInstallation();
+
+// Datenbankverbindung
+$db = Database::getInstance()->getConnection();
 
 // Hole alle Kunden mit ihren Backup-Jobs
 $sql = "
@@ -36,7 +39,36 @@ $result = $db->query($sql);
 $customers = [];
 
 while ($row = $result->fetch_assoc()) {
-    // ... [Verarbeitung wie zuvor] ...
+    $customerId = $row['customer_id'];
+    $jobId = $row['job_id'];
+    
+    if (!isset($customers[$customerId])) {
+        $customers[$customerId] = [
+            'name' => $row['customer_name'],
+            'number' => $row['customer_number'],
+            'emails' => $row['emails'],
+            'jobs' => []
+        ];
+    }
+    
+    if ($jobId && !isset($customers[$customerId]['jobs'][$jobId])) {
+        $customers[$customerId]['jobs'][$jobId] = [
+            'name' => $row['job_name'],
+            'hostname' => $row['hostname'],
+            'backup_type' => $row['backup_type'],
+            'results' => []
+        ];
+    }
+    
+    if ($row['date']) {
+        $customers[$customerId]['jobs'][$jobId]['results'][] = [
+            'status' => $row['status'],
+            'date' => $row['date'],
+            'created_at' => $row['created_at'],
+            'result_id' => $row['result_id'],
+            'notes' => $row['result_notes']
+        ];
+    }
 }
 ?>
 
@@ -45,66 +77,35 @@ while ($row = $result->fetch_assoc()) {
 <head>
     <title>Backup Monitor</title>
     <link rel="stylesheet" href="/assets/css/style.css">
-    <style>
-        /* ... [Vorherige Styles bleiben] ... */
-        
-        .tooltip-content {
-            width: 300px;
-            padding: 15px;
-        }
-        
-        .notes-section {
-            margin-top: 10px;
-            border-top: 1px solid #eee;
-            padding-top: 10px;
-        }
-        
-        .notes-textarea {
-            width: 100%;
-            min-height: 60px;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 12px;
-            resize: vertical;
-            margin-top: 5px;
-        }
-        
-        .notes-save-btn {
-            background: #4CAF50;
-            color: white;
-            border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
-            font-size: 12px;
-            margin-top: 5px;
-        }
-        
-        .save-indicator {
-            font-size: 12px;
-            color: #4CAF50;
-            margin-left: 10px;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        
-        .tooltip.editing .tooltip-content {
-            visibility: visible;
-            opacity: 1;
-        }
-    </style>
 </head>
 <body>
-    <!-- ... [Header bleibt gleich] ... -->
+    <div class="header">
+        <h1>Backup Monitor</h1>
+        <a href="/admin.php" class="settings-button">Einstellungen</a>
+    </div>
 
     <?php foreach ($customers as $customerId => $customer): ?>
         <div class="customer-card">
-            <!-- ... [Kunde-Header bleibt gleich] ... -->
+            <div class="customer-header tooltip">
+                <h2 class="customer-name">
+                    <?= htmlspecialchars($customer['name']) ?>
+                    <span class="customer-number">(<?= htmlspecialchars($customer['number']) ?>)</span>
+                </h2>
+                <div class="tooltip-content">
+                    <strong>E-Mail-Adressen:</strong><br>
+                    <?= nl2br(htmlspecialchars($customer['emails'])) ?>
+                </div>
+            </div>
             
             <?php foreach ($customer['jobs'] as $jobId => $job): ?>
                 <div class="backup-job">
-                    <!-- ... [Job-Header bleibt gleich] ... -->
+                    <div class="job-header tooltip">
+                        <span class="backup-type"><?= htmlspecialchars($job['backup_type']) ?></span>
+                        <span class="job-name"><?= htmlspecialchars($job['name']) ?></span>
+                        <div class="tooltip-content">
+                            <strong>Hostname:</strong> <?= htmlspecialchars($job['hostname']) ?>
+                        </div>
+                    </div>
                     
                     <div class="status-grid">
                         <?php
@@ -172,58 +173,6 @@ while ($row = $result->fetch_assoc()) {
         </div>
     <?php endforeach; ?>
 
-    <script>
-        function handleNotesEdit(textarea) {
-            textarea.closest('.tooltip').classList.add('editing');
-        }
-        
-        function handleNotesBlur(textarea) {
-            setTimeout(() => {
-                if (!textarea.closest('.tooltip').contains(document.activeElement)) {
-                    textarea.closest('.tooltip').classList.remove('editing');
-                }
-            }, 200);
-        }
-        
-        function saveNotes(statusId) {
-            const tooltip = document.getElementById(`status-${statusId}`);
-            const textarea = tooltip.querySelector('.notes-textarea');
-            const saveIndicator = tooltip.querySelector('.save-indicator');
-            
-            fetch('save_notes.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    status_id: statusId,
-                    notes: textarea.value
-                })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    saveIndicator.classList.add('show');
-                    setTimeout(() => {
-                        saveIndicator.classList.remove('show');
-                    }, 2000);
-                }
-            })
-            .catch(error => {
-                alert('Fehler beim Speichern der Notizen');
-            });
-        }
-
-        // Automatisches Speichern
-        document.querySelectorAll('.notes-textarea').forEach(textarea => {
-            let saveTimeout;
-            textarea.addEventListener('input', () => {
-                clearTimeout(saveTimeout);
-                saveTimeout = setTimeout(() => {
-                    saveNotes(textarea.dataset.statusId);
-                }, 1000);
-            });
-        });
-    </script>
+    <script src="/assets/js/script.js"></script>
 </body>
 </html>
