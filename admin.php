@@ -141,16 +141,16 @@ $page = $_GET['page'] ?? 'customers';
         <div class="sidebar">
             <h2>Administration</h2>
             <nav>
-                <a href="?page=customers" class="<?= $page === 'customers' ? 'active' : '' ?>">
+                <a href="?page=customers" class="sidebar-button <?= $page === 'customers' ? 'active' : '' ?>">
                     Kunden
                 </a>
-                <a href="?page=backup_jobs" class="<?= $page === 'backup_jobs' ? 'active' : '' ?>">
+                <a href="?page=backup_jobs" class="sidebar-button <?= $page === 'backup_jobs' ? 'active' : '' ?>">
                     Backup-Jobs
                 </a>
-                <a href="?page=status" class="<?= $page === 'status' ? 'active' : '' ?>">
+                <a href="?page=status" class="sidebar-button <?= $page === 'status' ? 'active' : '' ?>">
                     Status
                 </a>
-                <a href="?page=mail" class="<?= $page === 'mail' ? 'active' : '' ?>">
+                <a href="?page=mail" class="sidebar-button <?= $page === 'mail' ? 'active' : '' ?>">
                     Mail-Einstellungen
                 </a>
             </nav>
