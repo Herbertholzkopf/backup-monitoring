@@ -394,27 +394,42 @@ textarea:focus {
     padding: 20px;
     width: 200px;
     border-right: 1px solid #ddd;
+    height: 100vh;
+    position: fixed;
+    left: 0;
+    top: 0;
 }
 
 .sidebar h2 {
     margin-top: 0;
 }
 
-.sidebar nav a {
+.sidebar-button {
     display: block;
-    padding: 10px;
+    padding: 10px 15px;
     color: #333;
     text-decoration: none;
     transition: background-color 0.3s;
+    background-color: transparent;
+    border: none;
+    width: 100%;
+    text-align: left;
+    cursor: pointer;
 }
 
-.sidebar nav a:hover {
+.sidebar-button:hover {
     background-color: #e0e0e0;
 }
 
-.sidebar nav a.active {
+.sidebar-button.active {
     background-color: #007bff;
     color: white;
+}
+
+/* Hauptbereich */
+.content {
+    margin-left: 220px;
+    padding: 20px;
 }
 
 /* Responsive Design */
