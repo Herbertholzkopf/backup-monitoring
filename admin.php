@@ -85,7 +85,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
 
         case 'save_mail_config':
-            foreach (['mail_server', 'mail_port', 'mail_user', 'mail_password', 'mail_ssl'] as $key) {
+            foreach (['mail_host', 'mail_port', 'mail_username', 'mail_password', 'mail_encryption'] as $key) {
                 if (isset($_POST[$key])) {
                     saveSystemConfig($db, $key, $_POST[$key]);
                 }

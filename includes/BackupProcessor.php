@@ -36,6 +36,12 @@ class BackupProcessor {
         date_default_timezone_set($this->timezone);
     }
 
+    private function getSystemConfig($key) {
+        $result = $this->db->query("SELECT config_value FROM system_config WHERE config_key = '{$this->db->real_escape_string($key)}'");
+        $row = $result->fetch_assoc();
+        return $row ? $row['config_value'] : null;
+    }
+
     private function loadBackupTypes() {
         $result = $this->db->query("SELECT * FROM backup_types");
         $this->backup_types = [];
@@ -66,17 +72,14 @@ class BackupProcessor {
 
     private function setupMailServer() {
         try {
-            $server = $this->config['mail_ssl'] === '1' ? 
-                     'ssl://' . $this->config['mail_server'] : 
-                     $this->config['mail_server'];
-    
-            $this->mail_server = new POP3();
-            $this->mail_server->connect($server, $this->config['mail_port']);
-            $this->mail_server->login(
-                $this->config['mail_user'],
-                $this->config['mail_password']
-            );
-        } catch (Exception $e) {
+            $this->mail_server = new Imap([
+                'host' => $this->getSystemConfig('mail_host'),
+                'port' => $this->getSystemConfig('mail_port'),
+                'user' => $this->getSystemConfig('mail_username'),
+                'password' => $this->getSystemConfig('mail_password'),
+                'ssl' => $this->getSystemConfig('mail_encryption') !== 'none' ? $this->getSystemConfig('mail_encryption') : null
+            ]);
+        } catch (ExceptionInterface $e) {
             $this->logError("Mail-Server Verbindungsfehler: " . $e->getMessage());
             throw $e;
         }

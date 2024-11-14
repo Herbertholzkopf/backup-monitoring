@@ -72,11 +72,11 @@ CREATE TABLE IF NOT EXISTS system_config (
 
 -- Initial-Konfiguration
 INSERT INTO system_config (config_key, config_value, description) VALUES
-('mail_server', '', 'POP3 Server-Adresse'),
-('mail_port', '995', 'POP3 Server-Port'),
-('mail_user', '', 'E-Mail Benutzername'),
+('mail_host', '', 'IMAP Server-Adresse'),
+('mail_port', '143', 'IMAP Server-Port'),
+('mail_username', '', 'E-Mail Benutzername'),
 ('mail_password', '', 'E-Mail Passwort'),
-('mail_ssl', '1', 'SSL-Verschlüsselung verwenden (1=ja, 0=nein)'),
+('mail_encryption', 'none', 'Verschlüsselungstyp (none, ssl, tls)'),
 ('mail_delete_after_processing', '0', 'Verarbeitete E-Mails in den Papierkorb verschieben (1=ja, 0=nein)');
 
 -- Initial-Backup-Status mit erweiterten Suchbegriffen
