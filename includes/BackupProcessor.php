@@ -64,19 +64,15 @@ class BackupProcessor {
 
     private function setupMailServer() {
         try {
-            $this->mail_server = new POP3;
-            $server = $this->config['mail_ssl'] ? 
-                     'ssl://' . $this->config['mail_server'] : 
-                     $this->config['mail_server'];
-            
-            $this->mail_server->connect(
-                $server, 
-                $this->config['mail_port']
-            );
-            
+            $server = $this->config['mail']['ssl'] ? 
+                     'ssl://' . $this->config['mail']['server'] : 
+                     $this->config['mail']['server'];
+    
+            $this->mail_server = new POP3();
+            $this->mail_server->connect($server, $this->config['mail']['port']);
             $this->mail_server->login(
-                $this->config['mail_user'],
-                $this->config['mail_password']
+                $this->config['mail']['username'],
+                $this->config['mail']['password']
             );
         } catch (Exception $e) {
             $this->logError("Mail-Server Verbindungsfehler: " . $e->getMessage());
