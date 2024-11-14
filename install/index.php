@@ -164,7 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // [Rest des HTML-Codes bleibt unverändert]
 
-<!DOCTYPE html>
+?><!DOCTYPE html>
 <html>
 <head>
     <title>Backup-Monitor Installation</title>
