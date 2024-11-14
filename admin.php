@@ -4,6 +4,15 @@ require_once 'includes/functions.php';
 
 // Prüfe Installation
 checkInstallation();
+try {
+    $db = Database::getInstance()->getConnection();
+} catch (Exception $e) {
+    error_log("Fehler bei der Datenbankverbindung: " . $e->getMessage());
+    // Weiterleitung auf eine Fehlerseite oder Anzeige einer Fehlermeldung
+    http_response_code(500);
+    echo "Es ist ein Fehler aufgetreten. Bitte versuche es später erneut.";
+    exit;
+}
 
 // Initialisiere Datenbankverbindung
 $db = Database::getInstance()->getConnection();
