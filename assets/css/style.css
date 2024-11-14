@@ -388,6 +388,35 @@ textarea:focus {
     color: #666;
 }
 
+/* Seitenleiste */
+.sidebar {
+    background-color: #f1f1f1;
+    padding: 20px;
+    width: 200px;
+    border-right: 1px solid #ddd;
+}
+
+.sidebar h2 {
+    margin-top: 0;
+}
+
+.sidebar nav a {
+    display: block;
+    padding: 10px;
+    color: #333;
+    text-decoration: none;
+    transition: background-color 0.3s;
+}
+
+.sidebar nav a:hover {
+    background-color: #e0e0e0;
+}
+
+.sidebar nav a.active {
+    background-color: #007bff;
+    color: white;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
     body {
