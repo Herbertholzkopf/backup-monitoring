@@ -34,7 +34,33 @@ class BackupProcessor {
         date_default_timezone_set($this->timezone);
     }
 
-    // [loadBackupTypes(), loadCustomerEmails(), loadBackupJobs() bleiben unverändert wie im alten Code]
+    private function loadBackupTypes() {
+        $result = $this->db->query("SELECT * FROM backup_types");
+        $this->backup_types = [];
+        while ($row = $result->fetch_assoc()) {
+            $this->backup_types[$row['id']] = $row;
+        }
+    }
+
+    private function loadCustomerEmails() {
+        $result = $this->db->query("SELECT email, customer_id FROM customer_emails");
+        $this->customer_emails = [];
+        while ($row = $result->fetch_assoc()) {
+            $this->customer_emails[$row['email']] = $row['customer_id'];
+        }
+    }
+
+    private function loadBackupJobs() {
+        $result = $this->db->query(
+            "SELECT bj.*, bt.identifier_type 
+             FROM backup_jobs bj 
+             JOIN backup_types bt ON bj.backup_type_id = bt.id"
+        );
+        $this->backup_jobs = [];
+        while ($row = $result->fetch_assoc()) {
+            $this->backup_jobs[$row['id']] = $row;
+        }
+    }
 
     private function setupMailServer() {
         try {
