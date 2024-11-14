@@ -123,7 +123,7 @@ function logError($message, $type = 'error') {
         }
         file_put_contents($logFile, $logMessage, FILE_APPEND);
     } catch (Exception $e) {
-        error_log("Logging fehlgeschlagen: " . $e->getMessage());
+        error_log("Logging fehlgeschlagen: " . $e->getMessage() . "\n" . $e->getTraceAsString());
     }
 }
 
