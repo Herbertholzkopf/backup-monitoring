@@ -1,51 +1,87 @@
 <?php
-// install/index.php
-
 session_start();
+
+// Zusätzliche Sicherheitsmaßnahmen
+header('X-Frame-Options: DENY');
+header('X-Content-Type-Options: nosniff');
+header('X-XSS-Protection: 1; mode=block');
+
 $step = isset($_GET['step']) ? (int)$_GET['step'] : 1;
 $error = null;
 $success = null;
 
-// Prüfen ob bereits installiert
-if (file_exists('../config/config.php') && $step === 1) {
-    die('Installation wurde bereits durchgeführt. Aus Sicherheitsgründen löschen Sie bitte den "install" Ordner.');
+// Verbesserte Installations-Prüfung
+if (file_exists('../config/config.php')) {
+    if ($step === 1) {
+        die('Installation wurde bereits durchgeführt. Bitte löschen Sie den "install" Ordner.');
+    } elseif ($step !== 3) {
+        header('Location: ?step=3');
+        exit;
+    }
 }
 
 function testDatabaseConnection($host, $user, $password, $database) {
     try {
-        $db = new mysqli($host, $user, $password);
+        $db = @new mysqli($host, $user, $password);
         if ($db->connect_error) {
             throw new Exception("Verbindungsfehler: " . $db->connect_error);
         }
         
-        // Prüfe ob Datenbank existiert
+        // SQL-Injection Prevention
+        $database = $db->real_escape_string($database);
         $result = $db->query("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE SCHEMA_NAME = '$database'");
+        
         if ($result->num_rows === 0) {
-            // Versuche Datenbank zu erstellen
-            if (!$db->query("CREATE DATABASE IF NOT EXISTS `$database`")) {
+            if (!$db->query("CREATE DATABASE IF NOT EXISTS `$database` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci")) {
                 throw new Exception("Fehler beim Erstellen der Datenbank");
             }
         }
         
         $db->select_db($database);
+        
+        // Prüfe Schreibrechte
+        $testTable = "test_" . uniqid();
+        if (!$db->query("CREATE TABLE `$testTable` (id INT)")) {
+            throw new Exception("Keine Schreibrechte in der Datenbank");
+        }
+        $db->query("DROP TABLE `$testTable`");
+        
         return true;
     } catch (Exception $e) {
         throw $e;
+    } finally {
+        if (isset($db)) {
+            $db->close();
+        }
     }
 }
 
+// Zusätzliche Anforderungsprüfungen
+$requirements = [
+    'PHP Version >= 7.4' => version_compare(PHP_VERSION, '7.4.0', '>='),
+    'MySQLi Erweiterung' => extension_loaded('mysqli'),
+    'PDO Erweiterung' => extension_loaded('pdo'),
+    'config/ Verzeichnis beschreibbar' => is_writable('../config') || is_writable('..'),
+    'IMAP Erweiterung' => extension_loaded('imap'),
+    'OpenSSL Erweiterung' => extension_loaded('openssl'),
+    'Ausreichend Speicherplatz' => disk_free_space('/') > 100 * 1024 * 1024, // 100MB
+    'PHP Memory Limit >= 128M' => (int)ini_get('memory_limit') >= 128,
+];
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    switch ($step) {
-        case 1:
-            // Datenbankverbindung testen
-            try {
+    try {
+        switch ($step) {
+            case 1:
+                if (empty($_POST['db_host']) || empty($_POST['db_user']) || empty($_POST['db_name'])) {
+                    throw new Exception("Alle Pflichtfelder müssen ausgefüllt werden");
+                }
+                
                 if (testDatabaseConnection(
                     $_POST['db_host'],
                     $_POST['db_user'],
                     $_POST['db_password'],
                     $_POST['db_name']
                 )) {
-                    // Speichere Daten in Session für nächsten Schritt
                     $_SESSION['db_config'] = [
                         'host' => $_POST['db_host'],
                         'user' => $_POST['db_user'],
@@ -55,56 +91,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: ?step=2');
                     exit;
                 }
-            } catch (Exception $e) {
-                $error = $e->getMessage();
-            }
-            break;
-            
-        case 2:
-            // Datenbank-Tabellen erstellen
-            try {
+                break;
+                
+            case 2:
+                if (!isset($_SESSION['db_config'])) {
+                    header('Location: ?step=1');
+                    exit;
+                }
+                
                 $db = new mysqli(
                     $_SESSION['db_config']['host'],
                     $_SESSION['db_config']['user'],
                     $_SESSION['db_config']['password'],
                     $_SESSION['db_config']['database']
                 );
+                $db->set_charset('utf8mb4');
                 
-                // SQL für Tabellen-Erstellung
                 $sql = file_get_contents('sql/install.sql');
                 $queries = explode(';', $sql);
                 
-                foreach ($queries as $query) {
-                    if (trim($query)) {
-                        if (!$db->query($query)) {
-                            throw new Exception("Fehler beim Ausführen der SQL-Query: " . $db->error);
+                $db->begin_transaction();
+                
+                try {
+                    foreach ($queries as $query) {
+                        if (trim($query)) {
+                            if (!$db->query($query)) {
+                                throw new Exception($db->error);
+                            }
                         }
                     }
-                }
-                
-                // Config-Datei erstellen
-                $config_content = "<?php\nreturn " . var_export([
-                    'db' => $_SESSION['db_config'],
-                    'installation_date' => date('Y-m-d H:i:s')
-                ], true) . ";\n";
-                
-                if (!is_dir('../config')) {
-                    mkdir('../config', 0755, true);
-                }
-                
-                if (file_put_contents('../config/config.php', $config_content)) {
+                    
+                    // Erstelle Konfigurationsdatei
+                    $config = [
+                        'db' => $_SESSION['db_config'],
+                        'app' => [
+                            'name' => 'Backup Monitor',
+                            'timezone' => 'Europe/Berlin',
+                            'debug' => false,
+                            'log_path' => __DIR__ . '/../logs'
+                        ],
+                        'security' => [
+                            'allowed_ips' => ['127.0.0.1']
+                        ],
+                        'installation_date' => date('Y-m-d H:i:s')
+                    ];
+                    
+                    if (!is_dir('../config')) {
+                        if (!mkdir('../config', 0755, true)) {
+                            throw new Exception("Konnte Verzeichnis config/ nicht erstellen");
+                        }
+                    }
+                    
+                    if (!file_put_contents('../config/config.php', 
+                        "<?php\nreturn " . var_export($config, true) . ";\n")) {
+                        throw new Exception("Konnte Konfigurationsdatei nicht erstellen");
+                    }
+                    
+                    $db->commit();
                     header('Location: ?step=3');
                     exit;
-                } else {
-                    throw new Exception("Fehler beim Erstellen der Konfigurationsdatei");
+                    
+                } catch (Exception $e) {
+                    $db->rollback();
+                    throw $e;
                 }
-            } catch (Exception $e) {
-                $error = $e->getMessage();
-            }
-            break;
+                break;
+        }
+    } catch (Exception $e) {
+        $error = $e->getMessage();
     }
 }
-?>
+
+// [Rest des HTML-Codes bleibt unverändert]
 
 <!DOCTYPE html>
 <html>
