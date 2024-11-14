@@ -392,7 +392,7 @@ textarea:focus {
 .sidebar {
     background-color: #f1f1f1;
     padding: 20px;
-    width: 200px;
+    width: 250px;
     border-right: 1px solid #ddd;
     height: 100vh;
     position: fixed;
@@ -428,7 +428,7 @@ textarea:focus {
 
 /* Hauptbereich */
 .content {
-    margin-left: 220px;
+    margin-left: 270px;
     padding: 20px;
 }
 
