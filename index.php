@@ -110,7 +110,7 @@ while ($row = $result->fetch_assoc()) {
                     <div class="status-grid">
                         <?php
                         $today = new DateTime();
-                        for ($i = 15; $i >= 0; $i--) {
+                        for ($i = 15; $i >= 0; $i--):
                             $date = clone $today;
                             $date->modify("-$i days");
                             $dateStr = $date->format('Y-m-d');
@@ -167,11 +167,11 @@ while ($row = $result->fetch_assoc()) {
                                 </div>
                             </div>
                         <?php endfor; ?>
-                    </div>
-                </div>
-            <?php endforeach; ?>
-        </div>
-    <?php endforeach; ?>
+                    </div><!-- Ende .status-grid -->
+                </div><!-- Ende .backup-job -->
+            <?php endforeach; // Ende job foreach ?>
+        </div><!-- Ende .customer-card -->
+    <?php endforeach; // Ende customer foreach ?>
 
     <script src="/assets/js/script.js"></script>
 </body>
